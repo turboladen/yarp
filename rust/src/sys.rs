@@ -77,7 +77,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_and_serialize_test() {
+    fn serialize_test() {
         let (ruby_file_contents, len) = ruby_file_contents();
         let source = ruby_file_contents.as_ptr();
         let mut parser = MaybeUninit::<yp_parser_t>::uninit();
@@ -105,6 +105,59 @@ mod tests {
 
             yp_node_destroy(parser, node);
             yp_parser_free(parser);
+        }
+    }
+
+    #[test]
+    fn parse_serialize_test() {
+        let (ruby_file_contents, len) = ruby_file_contents();
+        let source = ruby_file_contents.as_ptr();
+        let mut parser = MaybeUninit::<yp_parser_t>::uninit();
+        let mut serialize_buffer = MaybeUninit::<yp_buffer_t>::uninit();
+        let mut parse_serialize_buffer = MaybeUninit::<yp_buffer_t>::uninit();
+
+        let serialized = unsafe {
+            yp_parser_init(parser.as_mut_ptr(), source, len, std::ptr::null());
+            let parser = parser.assume_init_mut();
+            let node = yp_parse(parser);
+
+            if !yp_buffer_init(serialize_buffer.as_mut_ptr()) {
+                panic!("Failed to init buffer");
+            }
+
+            let serialize_buffer = serialize_buffer.assume_init_mut();
+            yp_serialize(parser, node, serialize_buffer);
+
+            yp_node_destroy(parser, node);
+            yp_parser_free(parser);
+
+            // Can't use String -> CString here because `value` contains nul bytes.
+            Vec::from_raw_parts(
+                serialize_buffer.value as *mut u8,
+                serialize_buffer.length,
+                serialize_buffer.capacity,
+            )
+        };
+
+        unsafe {
+            if !yp_buffer_init(parse_serialize_buffer.as_mut_ptr()) {
+                panic!("Failed to init buffer");
+            }
+
+            let parse_serialize_buffer = parse_serialize_buffer.assume_init_mut();
+
+            yp_parse_serialize(
+                serialized.as_ptr() as *const i8,
+                serialized.len(),
+                parse_serialize_buffer,
+            );
+
+            let string = String::from_raw_parts(
+                parse_serialize_buffer.value as *mut u8,
+                parse_serialize_buffer.length,
+                parse_serialize_buffer.capacity,
+            );
+            assert!(string.starts_with("YARP"));
         }
     }
 }
