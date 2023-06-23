@@ -25,6 +25,7 @@ fn main() -> Result<(), io::Error> {
         .allowlist_type("yp_parser_t")
         .allowlist_function("yp_parser_init")
         .allowlist_function("yp_parser_free")
+        .allowlist_function("yp_version")
         .generate()
         .expect("Unable to generate yarp bindings");
 

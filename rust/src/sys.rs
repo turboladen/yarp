@@ -6,7 +6,11 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 #[cfg(test)]
 mod tests {
-    use std::{ffi::CString, mem::MaybeUninit, path::Path};
+    use std::{
+        ffi::{CStr, CString},
+        mem::MaybeUninit,
+        path::Path,
+    };
 
     use super::*;
 
@@ -31,5 +35,15 @@ mod tests {
 
             yp_parser_free(parser);
         }
+    }
+
+    #[test]
+    fn version_test() {
+        let cstring = unsafe {
+            let version = yp_version();
+            CStr::from_ptr(version)
+        };
+
+        assert_eq!(&cstring.to_string_lossy(), "0.4.0");
     }
 }
