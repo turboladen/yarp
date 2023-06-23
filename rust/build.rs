@@ -32,6 +32,7 @@ fn main() -> Result<(), io::Error> {
         .allowlist_function("yp_parse")
         .allowlist_function("yp_node_destroy")
         .allowlist_function("yp_prettyprint")
+        .allowlist_function("yp_serialize")
         .allowlist_function("yp_buffer_init")
         .allowlist_function("yp_version")
         .generate()

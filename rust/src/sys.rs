@@ -66,12 +66,44 @@ mod tests {
             let buffer = buffer.assume_init_mut();
             yp_prettyprint(parser, node, buffer);
 
-            let cstr = CStr::from_ptr(buffer.value);
-            let string = cstr.to_str().unwrap();
+            let string =
+                String::from_raw_parts(buffer.value as *mut u8, buffer.length, buffer.capacity);
             assert!(string.starts_with("ProgramNode"));
 
             yp_node_destroy(parser, node);
 
+            yp_parser_free(parser);
+        }
+    }
+
+    #[test]
+    fn parse_and_serialize_test() {
+        let (ruby_file_contents, len) = ruby_file_contents();
+        let source = ruby_file_contents.as_ptr();
+        let mut parser = MaybeUninit::<yp_parser_t>::uninit();
+        let mut buffer = MaybeUninit::<yp_buffer_t>::uninit();
+
+        unsafe {
+            yp_parser_init(parser.as_mut_ptr(), source, len, std::ptr::null());
+            let parser = parser.assume_init_mut();
+            let node = yp_parse(parser);
+
+            if !yp_buffer_init(buffer.as_mut_ptr()) {
+                panic!("Failed to init buffer");
+            }
+
+            let buffer = buffer.assume_init_mut();
+            yp_serialize(parser, node, buffer);
+
+            let serialized =
+                Vec::from_raw_parts(buffer.value as *mut u8, buffer.length, buffer.capacity);
+
+            assert_eq!(&serialized[0..4], b"YARP");
+            assert_eq!(serialized[4..5][0], 0); // YP_VERSION_MAJOR
+            assert_eq!(serialized[5..6][0], 4); // YP_VERSION_MINOR
+            assert_eq!(serialized[6..7][0], 0); // YP_VERSION_PATCH
+
+            yp_node_destroy(parser, node);
             yp_parser_free(parser);
         }
     }
