@@ -70,6 +70,8 @@ mod tests {
             let string = cstr.to_str().unwrap();
             assert!(string.starts_with("ProgramNode"));
 
+            yp_node_destroy(parser, node);
+
             yp_parser_free(parser);
         }
     }
