@@ -46,4 +46,31 @@ mod tests {
 
         assert_eq!(&cstring.to_string_lossy(), "0.4.0");
     }
+
+    #[test]
+    fn parse_and_print_test() {
+        let (ruby_file_contents, len) = ruby_file_contents();
+        let source = ruby_file_contents.as_ptr();
+        let mut parser = MaybeUninit::<yp_parser_t>::uninit();
+        let mut buffer = MaybeUninit::<yp_buffer_t>::uninit();
+
+        unsafe {
+            yp_parser_init(parser.as_mut_ptr(), source, len, std::ptr::null());
+            let parser = parser.assume_init_mut();
+            let node = yp_parse(parser);
+
+            if !yp_buffer_init(buffer.as_mut_ptr()) {
+                panic!("Failed to init buffer");
+            }
+
+            let buffer = buffer.assume_init_mut();
+            yp_prettyprint(parser, node, buffer);
+
+            let cstr = CStr::from_ptr(buffer.value);
+            let string = cstr.to_str().unwrap();
+            assert!(string.starts_with("ProgramNode"));
+
+            yp_parser_free(parser);
+        }
+    }
 }

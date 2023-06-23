@@ -22,9 +22,16 @@ fn main() -> Result<(), io::Error> {
         .header("../include/yarp/defines.h")
         .header("../include/yarp.h")
         .clang_arg(format!("-I{}", ruby_include_path.display()))
+        // Types
         .allowlist_type("yp_parser_t")
+        .allowlist_type("yp_node_t")
+        .allowlist_type("yp_buffer_t")
+        // Functions
         .allowlist_function("yp_parser_init")
         .allowlist_function("yp_parser_free")
+        .allowlist_function("yp_parse")
+        .allowlist_function("yp_prettyprint")
+        .allowlist_function("yp_buffer_init")
         .allowlist_function("yp_version")
         .generate()
         .expect("Unable to generate yarp bindings");
