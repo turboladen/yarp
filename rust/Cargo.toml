@@ -1,0 +1,12 @@
+[package]
+name = "yarp"
+version = "0.1.0"
+edition = "2021"
+# https://doc.rust-lang.org/cargo/reference/build-scripts.html#the-links-manifest-key
+
+[lib]
+crate-type = ["staticlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
