@@ -1,6 +1,6 @@
 use std::{
     io::{self, Write},
-    path::Path,
+    path::{Path, PathBuf},
     process::Command,
 };
 
@@ -10,12 +10,30 @@ fn main() -> Result<(), io::Error> {
     let dir_str = env!("CARGO_MANIFEST_DIR");
     let rust_path = Path::new(dir_str);
     let ruby_build_path = rust_path.join("../build/").canonicalize().unwrap();
+    let ruby_include_path = rust_path.join("../include/").canonicalize().unwrap();
 
     println!("cargo:rustc-link-lib=static=rubyparser");
     println!(
         "cargo:rustc-link-search=native={}",
         ruby_build_path.display()
     );
+
+    let bindings = bindgen::Builder::default()
+        .header("../include/yarp/defines.h")
+        .header("../include/yarp.h")
+        .clang_arg(format!("-I{}", ruby_include_path.display()))
+        .allowlist_type("yp_parser_t")
+        .allowlist_function("yp_parser_init")
+        .allowlist_function("yp_parser_free")
+        .generate()
+        .expect("Unable to generate yarp bindings");
+
+    // Write the bindings to the $OUT_DIR/bindings.rs file.
+    let out_path = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("Couldn't write bindings!");
 
     Ok(())
 }
